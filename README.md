@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <img src="docs/open_mmlab.png" align="right" width="30%">
 
 # OpenPCDet
@@ -168,3 +169,7 @@ If you find this project useful in your research, please consider cite:
 
 ## Contact
 This project is currently maintained by Shaoshuai Shi ([@sshaoshuai](http://github.com/sshaoshuai)) and Chaoxu Guo ([@Gus-Guo](https://github.com/Gus-Guo)).
+=======
+# PVRCNN_VoteNet
+PVRCNN + VoteNet test
+>>>>>>> 4d960fc227a1d24780a84cee9456ad3658715014
