@@ -97,8 +97,8 @@ class VoxelSetAbstraction(nn.Module):
         vote_gt = self.forward_vote_dict['gt']
         batch_size = int(vote_gt.shape[0])
 
-        #  reg_loss_src = self.reg_loss_func(vote_preds, vote_gt)
-        reg_loss_src = torch.div(torch.sum(torch.abs(vote_gt - vote_preds)), vote_gt.shape[1])
+        reg_loss_src = self.reg_loss_func(vote_preds, vote_gt)
+        #  reg_loss_src = torch.div(torch.sum(torch.abs(vote_gt - vote_preds)), vote_gt.shape[1])
         reg_loss = reg_loss_src.sum() / batch_size
         reg_loss = reg_loss * self.losses_cfg['reg_weight']
 

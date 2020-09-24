@@ -8,7 +8,6 @@ output/
 venv/
 *.idea/
 *.so
-*.sh 
 *.pth
 *.pkl
 *.zip
