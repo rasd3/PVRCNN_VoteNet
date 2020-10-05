@@ -116,7 +116,7 @@ MODEL:
         NUM_OUTPUT_FEATURES: 128
         SAMPLE_METHOD: FPS
         SAMPLE_METHOD_VOTE:
-            USE_VOTE: False
+            USE_VOTE_LOSS: False
             LOSS_WEIGHTS: {
                 'reg_weight': 2.0,
             }

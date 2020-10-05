@@ -67,12 +67,12 @@ class VoteNet(nn.Module):
         end_points = self.backbone_net(inputs, end_points)
                 
         # --------- HOUGH VOTING ---------
-        xyz = end_points['fp2_xyz']
-        features = end_points['fp2_features']
+        xyz = end_points['fp3_xyz']
+        features = end_points['fp3_features']
 
-        vote_xyz, offset = self.vgen(xyz, features)
+        vote_xyz = self.vgen(xyz, features)
 
-        return vote_xyz, offset.squeeze()
+        return vote_xyz
 
 
 if __name__ == '__main__':

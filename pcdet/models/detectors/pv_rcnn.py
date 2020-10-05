@@ -26,7 +26,8 @@ class PVRCNN(Detector3DTemplate):
         loss_rpn, tb_dict = self.dense_head.get_loss()
         loss_point, tb_dict = self.point_head.get_loss(tb_dict)
         loss_rcnn, tb_dict = self.roi_head.get_loss(tb_dict)
-        if self.model_cfg.PFE.SAMPLE_METHOD_VOTE.USE_VOTE:
+        if self.model_cfg.PFE.SAMPLE_METHOD_VOTE.USE_VOTE_LOSS or\
+                self.model_cfg.PFE.SAMPLE_METHOD == 'Vote':
             loss_pfe, tb_dict = self.pfe.get_loss(tb_dict)
             loss = loss_pfe
         else:

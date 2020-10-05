@@ -43,6 +43,8 @@ def parse_config():
     parser.add_argument('--max_waiting_mins', type=int, default=0, help='max waiting minutes')
     parser.add_argument('--start_epoch', type=int, default=0, help='')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
+    # ADD
+    parser.add_argument('--pretrained_vote', type=str, default=None, help='Using pretrained vote model')
 
     args = parser.parse_args()
 
@@ -128,6 +130,9 @@ def main():
     last_epoch = -1
     if args.pretrained_model is not None:
         model.load_params_from_file(filename=args.pretrained_model, to_cpu=dist, logger=logger)
+    if args.pretrained_vote is not None:
+        model.load_params_from_file(filename=args.pretrained_vote, to_cpu=dist, logger=logger, only_vot=True)
+        
 
     if args.ckpt is not None:
         it, start_epoch = model.load_params_with_optimizer(args.ckpt, to_cpu=dist, optimizer=optimizer, logger=logger)

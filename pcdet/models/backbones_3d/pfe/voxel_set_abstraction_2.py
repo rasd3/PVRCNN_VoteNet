@@ -142,7 +142,7 @@ class VoxelSetAbstraction(nn.Module):
                 self.model_cfg.SAMPLE_METHOD == 'Vote':
             self.losses_cfg = self.model_cfg.SAMPLE_METHOD_VOTE.LOSS_WEIGHTS
             self.key_votenet = VoteNet(0)
-            self.reg_loss_func = F.smooth_l1_loss
+            #  self.reg_loss_func = F.smooth_l1_loss
 
 
     def interpolate_from_bev_features(self, keypoints, bev_features, batch_size, bev_stride):
@@ -174,8 +174,8 @@ class VoxelSetAbstraction(nn.Module):
         vote_gt = self.forward_vote_dict['gt']
         batch_size = int(vote_gt.shape[0])
 
-        reg_loss = self.reg_loss_func(vote_preds, vote_gt)
-        #  reg_loss = torch.div(torch.sum(torch.abs(vote_gt - vote_preds)), vote_gt.shape[1])
+        #  reg_loss_src = self.reg_loss_func(vote_preds, vote_gt)
+        reg_loss = torch.div(torch.sum(torch.abs(vote_gt - vote_preds)), vote_gt.shape[1])
         reg_loss = reg_loss * self.losses_cfg['reg_weight']
 
         if tb_dict is None:
@@ -200,6 +200,7 @@ class VoxelSetAbstraction(nn.Module):
         else:
             raise NotImplementedError
         keypoints_list = []
+        keypoints_diff_list = []
         for bs_idx in range(batch_size):
             bs_mask = (batch_indices == bs_idx)
             sampled_points = src_points[bs_mask].unsqueeze(dim=0)  # (1, N, 3)
@@ -213,6 +214,16 @@ class VoxelSetAbstraction(nn.Module):
                     cur_pt_idxs[0, -empty_num:] = cur_pt_idxs[0, :empty_num]
 
                 keypoints = sampled_points[0][cur_pt_idxs[0]]
+
+                if self.model_cfg.SAMPLE_METHOD_VOTE.USE_VOTE_LOSS:
+                    # GT offset for each keypoint
+                    #  closest_box = make_match_diff(batch_dict['gt_boxes'][bs_idx],
+                                                  #  keypoints,
+                                                  #  self.model_cfg.NUM_KEYPOINTS)
+                    #  keypoints_diff_list.append(match_diff)
+                    #  keypoints_diff_list.append(closest_box.unsqueeze(0))
+                    pass
+
                 keypoints = keypoints.unsqueeze(dim=0)
 
             elif self.model_cfg.SAMPLE_METHOD == 'Vote':
@@ -228,8 +239,28 @@ class VoxelSetAbstraction(nn.Module):
             keypoints_list.append(keypoints)
 
         keypoints = torch.cat(keypoints_list, dim=0)  # (B, M, 3)
+        #  keypoints.requires_grad = True
+        if self.model_cfg.SAMPLE_METHOD == 'FPS' and \
+                self.model_cfg.SAMPLE_METHOD_VOTE.USE_VOTE_LOSS:
+            #  keypoints_diff = torch.cat(keypoints_diff_list, dim=0)
+            #  keypoints = self.key_votenet(keypoints)
+            #  self.forward_vote_dict['preds'] = keypoints
+            #  self.forward_vote_dict['gt'] = keypoints_diff
+            pass
 
-        return keypoints 
+        if self.model_cfg.SAMPLE_METHOD == 'Vote':
+            #  keypoints = self.key_votenet(keypoints)
+            for bs_idx in range(batch_size):
+                closest_box = make_match_diff(batch_dict['gt_boxes'][bs_idx],
+                                              keypoints[bs_idx],
+                                              self.model_cfg.NUM_KEYPOINTS)
+                keypoints_diff_list.append(closest_box.unsqueeze(0))
+
+            keypoints_diff = torch.cat(keypoints_diff_list, dim=0)
+            self.forward_vote_dict['preds'] = keypoints
+            self.forward_vote_dict['gt'] = keypoints_diff
+
+        return keypoints
 
     def forward(self, batch_dict):
         """
@@ -250,37 +281,6 @@ class VoxelSetAbstraction(nn.Module):
 
         """
         keypoints = self.get_sampled_points(batch_dict)
-
-        if self.training:
-            TRAIN_LOSS = (self.model_cfg.SAMPLE_METHOD == 'FPS' and \
-                          self.model_cfg.SAMPLE_METHOD_VOTE.USE_VOTE_LOSS) or \
-                         (self.model_cfg.SAMPLE_METHOD == 'Vote')
-            if TRAIN_LOSS:
-                keypoints_diff_list = []
-                keypoints.requires_grad = True
-
-            if self.model_cfg.SAMPLE_METHOD == 'FPS' and \
-                    self.model_cfg.SAMPLE_METHOD_VOTE.USE_VOTE_LOSS:
-                for bs_idx in range(batch_dict['batch_size']):
-                    # GT offset for each keypoint
-                    closest_box = make_match_diff(batch_dict['gt_boxes'][bs_idx],
-                                                  keypoints[bs_idx],
-                                                  self.model_cfg.NUM_KEYPOINTS)
-                    keypoints_diff_list.append(closest_box.unsqueeze(0))
-                keypoints_diff = torch.cat(keypoints_diff_list, dim=0)
-                keypoints = self.key_votenet(keypoints)
-            if self.model_cfg.SAMPLE_METHOD == 'Vote':
-                keypoints = self.key_votenet(keypoints)
-                for bs_idx in range(batch_dict['batch_size']):
-                    closest_box = make_match_diff(batch_dict['gt_boxes'][bs_idx],
-                                                  keypoints[bs_idx],
-                                                  self.model_cfg.NUM_KEYPOINTS)
-                    keypoints_diff_list.append(closest_box.unsqueeze(0))
-                keypoints_diff = torch.cat(keypoints_diff_list, dim=0)
-
-            if TRAIN_LOSS:
-                self.forward_vote_dict['preds'] = keypoints
-                self.forward_vote_dict['gt'] = keypoints_diff
 
         point_features_list = []
         if 'bev' in self.model_cfg.FEATURES_SOURCE:

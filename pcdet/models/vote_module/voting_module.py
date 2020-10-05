@@ -51,11 +51,11 @@ class VotingModule(nn.Module):
         net = self.conv3(net) # (batch_size, (3+out_dim)*vote_factor, num_seed)
                 
         net = net.transpose(2,1).view(batch_size, num_seed, self.vote_factor, 3)
-        offset = net[:,:,:,0:3]
+        offset = net[..., :3]
         vote_xyz = seed_xyz.unsqueeze(2) + offset
         vote_xyz = vote_xyz.contiguous().view(batch_size, num_vote, 3)
         
-        return vote_xyz, offset
+        return vote_xyz
  
 if __name__=='__main__':
     net = VotingModule(2, 256).cuda()
